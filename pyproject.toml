@@ -11,7 +11,8 @@ dependencies = [
     "pyobjc-core (>=11.0,<12.0)",
     "pyobjc-framework-vision (>=11.0,<12.0)",
     "pyobjc-framework-cocoa (>=11.0,<12.0)",
-    "ipython (>=9.2.0,<10.0.0)"
+    "ipython (>=9.2.0,<10.0.0)",
+    "symspellpy (>=6.9.0,<7.0.0)",
 ]
 
 [tool.poetry]
