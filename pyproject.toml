@@ -10,7 +10,8 @@ requires-python = ">=3.12"
 dependencies = [
     "pyobjc-core (>=11.0,<12.0)",
     "pyobjc-framework-vision (>=11.0,<12.0)",
-    "pyobjc-framework-cocoa (>=11.0,<12.0)"
+    "pyobjc-framework-cocoa (>=11.0,<12.0)",
+    "ipython (>=9.2.0,<10.0.0)"
 ]
 
 [tool.poetry]

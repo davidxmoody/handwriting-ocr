@@ -1,10 +1,15 @@
-import sys
-import Vision
+from os.path import expandvars
+from pathlib import Path
+from Vision import (
+    VNRecognizeTextRequest,
+    VNRequestTextRecognitionLevelAccurate,
+    VNImageRequestHandler,
+)
 from Quartz import CGImageSourceCreateWithURL, CGImageSourceCreateImageAtIndex
 from CoreFoundation import NSURL
 
 
-def main(image_path):
+def convert(image_path: str, transcript_path: str):
     image_url = NSURL.fileURLWithPath_(image_path)
     image_source = CGImageSourceCreateWithURL(image_url, None)
     if image_source is None:
@@ -16,34 +21,57 @@ def main(image_path):
         print("Failed to get CGImage from source")
         return
 
-    request = Vision.VNRecognizeTextRequest.alloc().initWithCompletionHandler_(
-        lambda req, err: handle_results(req.results(), err)
+    request = VNRecognizeTextRequest.alloc().initWithCompletionHandler_(
+        lambda req, err: handle_results(req.results(), err, transcript_path)
     )
 
     request.setRecognitionLanguages_(["en-GB"])
-    request.setRecognitionLevel_(Vision.VNRequestTextRecognitionLevelAccurate)
+    request.setRecognitionLevel_(VNRequestTextRecognitionLevelAccurate)
     request.setUsesLanguageCorrection_(True)
 
-    handler = Vision.VNImageRequestHandler.alloc().initWithCGImage_options_(
-        cg_image_ref, {}
-    )
+    handler = VNImageRequestHandler.alloc().initWithCGImage_options_(cg_image_ref, {})
     success, error = handler.performRequests_error_([request], None)
     if not success:
         print("Failed to perform OCR:", error)
 
 
-def handle_results(results, error):
+def handle_results(results, error, transcript_path):
     if error:
         print("Error during OCR:", error)
         return
+
+    transcript_lines = []
     for observation in results:
         candidates = observation.topCandidates_(1)
         if candidates and candidates[0]:
-            print(candidates[0].string())
+            transcript_lines.append(candidates[0].string())
+
+    Path(transcript_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(transcript_path, "w") as file:
+        file.write("\n".join(transcript_lines))
+    print(f"Written {len(transcript_lines):>2} lines to: {transcript_path}")
+
+
+def main():
+    diary_dir = Path(expandvars("$DIARY_DIR"))
+    pattern = "scanned/[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]/scanned-*.*"
+    matches = reversed(list(diary_dir.glob(pattern)))
+
+    for scanned_path in matches:
+        transcript_path = (
+            str(scanned_path)
+            .replace("scanned-", "transcript-")
+            .replace("scanned/", "transcripts/")
+            .replace(".png", ".md")
+            .replace(".jpg", ".md")
+        )
+
+        if Path(transcript_path).exists():
+            print(f"Skipping existing: {transcript_path}")
+            continue
+
+        convert(str(scanned_path), transcript_path)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python convert.py input.png")
-    else:
-        main(sys.argv[1])
+    main()
