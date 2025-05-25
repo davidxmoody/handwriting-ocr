@@ -22,16 +22,52 @@ tscripts = sorted(
 
 
 # %%
-%%capture cap --no-stderr
+def migrate(source: Path, dest: Path):
+    if dest.exists():
+        raise Exception("Destination already exists")
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    source.rename(dest)
+
+    try:
+        source.parent.rmdir()
+        source.parent.parent.rmdir()
+        source.parent.parent.parent.rmdir()
+    except OSError:
+        pass
+
+    scanned_meta_dir = Path(str(source.parent).replace("transcripts", "scanned-meta"))
+
+    for sm in scanned_meta_dir.glob("scanned-*.*.json"):
+        sm.unlink()
+
+    try:
+        scanned_meta_dir.rmdir()
+        scanned_meta_dir.parent.rmdir()
+        scanned_meta_dir.parent.parent.rmdir()
+    except OSError:
+        pass
+
+    scanned_dir = Path(str(source.parent).replace("transcripts", "scanned"))
+
+    old_scanned_dir = Path(str(scanned_dir).replace("scanned/", "old-scanned/"))
+    old_scanned_dir.parent.mkdir(parents=True, exist_ok=True)
+    scanned_dir.rename(old_scanned_dir)
+
+    try:
+        scanned_dir.parent.rmdir()
+        scanned_dir.parent.parent.rmdir()
+    except OSError:
+        pass
+
+
+# %%
 for tscript in tscripts:
     day = tscript.parent.name
     month = tscript.parent.parent.name
     year = tscript.parent.parent.parent.name
 
     date_str = f"{year}-{month}-{day}"
-
-    if date_str < "2021-05-05":
-        break
 
     print(f"{date_str}   -----------------------------------------------")
 
@@ -58,12 +94,18 @@ for tscript in tscripts:
     print()
 
     print("\nCandidate moves:\n")
-    for file in candidates:
-        print(f"mv {tscript.relative_to(diary_dir)} {file.relative_to(diary_dir)}")
+    for i, file in enumerate(candidates):
+        print(
+            f"({i + 1}) {tscript.relative_to(diary_dir)} -> {file.relative_to(diary_dir)}"
+        )
+
+    print("\n\n")
+
+    choice = input("Choose an option: ")
+    if choice.isdigit():
+        index = int(choice) - 1
+        if not (0 <= index < len(candidates)):
+            raise Exception("Invalid choice")
+        migrate(tscript, candidates[index])
 
     print("\n\n\n")
-
-
-# %%
-with open("output.txt", "w") as f:
-    f.write(cap.stdout)
