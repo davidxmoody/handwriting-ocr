@@ -515,6 +515,18 @@ pyobjc-framework-CoreML = ">=11.0"
 pyobjc-framework-Quartz = ">=11.0"
 
 [[package]]
+name = "pyspellchecker"
+version = "0.8.3"
+description = "Pure python spell checker based on work by Peter Norvig"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "pyspellchecker-0.8.3-py3-none-any.whl", hash = "sha256:e993076e98b0da5a99b7cc31085c3022c77a9dc37c5e95f5cf6304b5dbb8b9d2"},
+    {file = "pyspellchecker-0.8.3.tar.gz", hash = "sha256:cb06eeafe124837f321e0d02f8e21deab713e966e28e0360319a28a089c43978"},
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -631,4 +643,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "0b60e92f6ef6404e984ceed88e5fbb6059a02639f728272087f603dcff48a270"
+content-hash = "2f5cd491d18f16fc1ae5b07b721bce8a03059a3e3a1aa46448fc24d37de7840f"
