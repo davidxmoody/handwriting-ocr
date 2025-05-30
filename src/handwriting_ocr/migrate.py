@@ -1,17 +1,10 @@
-import pandas as pd
 from os.path import expandvars
 from pathlib import Path
+import re
 
 
 # %%
 diary_dir = Path(expandvars("$DIARY_DIR"))
-
-
-# %%
-events = pd.read_table(expandvars("$DIARY_DIR/data/atracker.tsv"))
-events = events.loc[events.category == "journal"]
-events["start"] = pd.to_datetime(events.start, utc=True).dt.tz_convert("Europe/London")
-events = events.set_index("start")
 
 
 # %%
@@ -71,41 +64,24 @@ for tscript in tscripts:
 
     print(f"{date_str}   -----------------------------------------------")
 
-    print("\nATracker events:\n")
-    day_events = events.loc[date_str:date_str]
-    candidates = []
-    for event in day_events.reset_index().itertuples():
-        file = (
-            diary_dir
-            / f"entries/{year}/{month}/{day}/diary-{event.start.hour:02d}-{event.start.minute:02d}.md"
-        )
-        if not file.exists():
-            candidates.append(file)
-        print(
-            event.start,
-            event.duration,
-            file.relative_to(diary_dir),
-            ("Exists" if file.exists() else ""),
-        )
+    existing_entries = list(
+        diary_dir.glob(f"entries/{year}/{month}/{day}/diary-*-*.md")
+    )
+    if existing_entries:
+        print("Existing entries:")
+        for entry in existing_entries:
+            print(entry.relative_to(diary_dir))
+        print("\n")
+    else:
+        print("No existing entries\n")
 
-    print("\nExisting entries:\n")
-    for entry in diary_dir.glob(f"entries/{year}/{month}/{day}/diary-*-*.md"):
-        print(entry.relative_to(diary_dir))
-    print()
+    choice = input("Enter time (HH-MM format or leave blank for 00-00): ")
+    if choice == "":
+        choice = "00-00"
 
-    print("\nCandidate moves:\n")
-    for i, file in enumerate(candidates):
-        print(
-            f"({i + 1}) {tscript.relative_to(diary_dir)} -> {file.relative_to(diary_dir)}"
-        )
+    if re.match(r"^\d{2}-\d{2}$", choice):
+        migrate(tscript, diary_dir / f"entries/{year}/{month}/{day}/diary-{choice}.md")
+    else:
+        raise Exception("Invalid match")
 
     print("\n\n")
-
-    choice = input("Choose an option: ")
-    if choice.isdigit():
-        index = int(choice) - 1
-        if not (0 <= index < len(candidates)):
-            raise Exception("Invalid choice")
-        migrate(tscript, candidates[index])
-
-    print("\n\n\n")
